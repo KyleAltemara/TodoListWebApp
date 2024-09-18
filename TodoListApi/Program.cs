@@ -21,7 +21,7 @@ public class Program
 
         var app = builder.Build();
 
-        var todoItems = app.MapGroup("/todoitems");
+        RouteGroupBuilder todoItems = app.MapGroup("/todoitems");
 
         todoItems.MapGet("/", GetAllTodos);
         todoItems.MapGet("/complete", GetCompleteTodos);
@@ -46,49 +46,67 @@ public class Program
 
         app.Run();
     }
-    static async Task<IResult> GetAllTodos(TodoDb db)
+    public static async Task<IResult> GetAllTodos(TodoDb db)
     {
-        return TypedResults.Ok(await db.Todos.ToArrayAsync());
+        return TypedResults.Ok(await db.Todos.Select(x => new TodoItemDTO(x)).ToArrayAsync());
     }
 
-    static async Task<IResult> GetCompleteTodos(TodoDb db)
+    public static async Task<IResult> GetCompleteTodos(TodoDb db)
     {
-        return TypedResults.Ok(await db.Todos.Where(t => t.IsComplete).ToListAsync());
+        return TypedResults.Ok(await db.Todos.Where(t => t.IsComplete).Select(x => new TodoItemDTO(x)).ToListAsync());
     }
 
-    static async Task<IResult> GetTodo(int id, TodoDb db)
+    public static async Task<IResult> GetTodo(int id, TodoDb db)
     {
         return await db.Todos.FindAsync(id)
-            is Todo todo
-                ? TypedResults.Ok(todo)
+            is TodoItem todo
+                ? TypedResults.Ok(new TodoItemDTO(todo))
                 : TypedResults.NotFound();
     }
 
-    static async Task<IResult> CreateTodo(Todo todo, TodoDb db)
+    public static async Task<IResult> CreateTodo(TodoItemDTO todoItemDTO, TodoDb db)
     {
-        db.Todos.Add(todo);
+        if (string.IsNullOrEmpty(todoItemDTO.Name))
+        {
+            return TypedResults.BadRequest("Name is required.");
+        }
+
+        var todoItem = new TodoItem
+        {
+            IsComplete = todoItemDTO.IsComplete,
+            Name = todoItemDTO.Name
+        };
+
+        db.Todos.Add(todoItem);
         await db.SaveChangesAsync();
 
-        return TypedResults.Created($"/todoitems/{todo.Id}", todo);
+        todoItemDTO = new TodoItemDTO(todoItem);
+
+        return TypedResults.Created($"/todoitems/{todoItem.Id}", todoItemDTO);
     }
 
-    static async Task<IResult> UpdateTodo(int id, Todo inputTodo, TodoDb db)
+    public static async Task<IResult> UpdateTodo(int id, TodoItemDTO todoItemDTO, TodoDb db)
     {
+        if (string.IsNullOrEmpty(todoItemDTO.Name))
+        {
+            return TypedResults.BadRequest("Name is required.");
+        }
+
         var todo = await db.Todos.FindAsync(id);
 
         if (todo is null) return TypedResults.NotFound();
 
-        todo.Name = inputTodo.Name;
-        todo.IsComplete = inputTodo.IsComplete;
+        todo.Name = todoItemDTO.Name;
+        todo.IsComplete = todoItemDTO.IsComplete;
 
         await db.SaveChangesAsync();
 
         return TypedResults.NoContent();
     }
 
-    static async Task<IResult> DeleteTodo(int id, TodoDb db)
+    public static async Task<IResult> DeleteTodo(int id, TodoDb db)
     {
-        if (await db.Todos.FindAsync(id) is Todo todo)
+        if (await db.Todos.FindAsync(id) is TodoItem todo)
         {
             db.Todos.Remove(todo);
             await db.SaveChangesAsync();
