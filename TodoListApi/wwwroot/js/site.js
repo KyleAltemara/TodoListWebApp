@@ -82,6 +82,18 @@ function displayEditForm(id) {
     document.getElementById('edit-id').value = item.id;
     document.getElementById('edit-isComplete').checked = item.isComplete;
     document.getElementById('editForm').style.display = 'block';
+
+    // Add event listeners to detect changes
+    const editNameInput = document.getElementById('edit-name');
+    const editIsCompleteCheckbox = document.getElementById('edit-isComplete');
+    editNameInput.addEventListener('input', handleEditChange);
+    editIsCompleteCheckbox.addEventListener('change', handleEditChange);
+}
+
+
+// Handle changes in the edit form
+function handleEditChange() {
+    displayMessage('The record hasn\'t been updated yet. Please submit the edited to-do.', 'info');
 }
 
 // Update an existing item
@@ -114,6 +126,7 @@ function updateItem() {
                 throw new Error('Network response was not ok');
             }
             getItems();
+            displayMessage('The to-do item has been successfully updated.', 'success', 3000); // Display message for 3 seconds
         })
         .catch(error => console.error('Unable to update item.', error));
 
@@ -122,9 +135,26 @@ function updateItem() {
     return false;
 }
 
+// Function to display messages
+function displayMessage(message, type, duration) {
+    const messageContainer = document.getElementById('messageContainer');
+    messageContainer.innerText = message;
+    messageContainer.style.display = 'block';
+    messageContainer.className = type; // Add a class for styling based on message type
+
+    if (duration) {
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+        }, duration);
+    }
+}
+
 // Close the edit form
 function closeInput() {
     document.getElementById('editForm').style.display = 'none';
+    // Clear the message when the form is closed
+    const messageContainer = document.getElementById('messageContainer');
+    messageContainer.style.display = 'none';
 }
 
 // Display the count of items
