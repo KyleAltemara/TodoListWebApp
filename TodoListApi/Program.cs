@@ -10,32 +10,28 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
-        builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
         // Add services to the container.
+        builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+        //builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        //builder.Services.AddEndpointsApiExplorer();
+        //builder.Services.AddSwaggerGen();
 
         var app = builder.Build();
-
-        RouteGroupBuilder todoItems = app.MapGroup("/todoitems");
-
-        todoItems.MapGet("/", GetAllTodos);
-        todoItems.MapGet("/complete", GetCompleteTodos);
-        todoItems.MapGet("/{id}", GetTodo);
-        todoItems.MapPost("/", CreateTodo);
-        todoItems.MapPut("/{id}", UpdateTodo);
-        todoItems.MapDelete("/{id}", DeleteTodo);
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            //app.UseSwagger();
+            //app.UseSwaggerUI();
+            app.UseDeveloperExceptionPage();
         }
+
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
 
         app.UseHttpsRedirection();
 
@@ -44,8 +40,17 @@ public class Program
 
         app.MapControllers();
 
+        // Map the API endpoints
+        app.MapGet("/api/todoitems", GetAllTodos);
+        app.MapGet("/api/todoitems/complete", GetCompleteTodos);
+        app.MapGet("/api/todoitems/{id}", GetTodo);
+        app.MapPost("/api/todoitems", CreateTodo);
+        app.MapPut("/api/todoitems/{id}", UpdateTodo);
+        app.MapDelete("/api/todoitems/{id}", DeleteTodo);
+
         app.Run();
     }
+
     public static async Task<IResult> GetAllTodos(TodoDb db)
     {
         return TypedResults.Ok(await db.Todos.Select(x => new TodoItemDTO(x)).ToArrayAsync());
