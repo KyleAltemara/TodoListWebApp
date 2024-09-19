@@ -53,6 +53,13 @@ function addItem() {
 
 // Delete an item by ID
 function deleteItem(id) {
+    const item = todos.find(item => item.id === id);
+    const confirmation = confirm(`Are you sure you want to delete the to-do item: "${item.name}"?`);
+
+    if (!confirmation) {
+        return;
+    }
+
     fetch(`${uri}/${id}`, {
         method: 'DELETE'
     })
@@ -64,6 +71,7 @@ function deleteItem(id) {
         })
         .catch(error => console.error('Unable to delete item.', error));
 }
+
 
 // Display the edit form for a specific item
 function displayEditForm(id) {
